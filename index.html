@@ -8,6 +8,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (XLSX Export) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
@@ -25,9 +29,13 @@
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <svg class="w-8 h-8 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                    <span class="font-bold text-xl tracking-tight text-gray-900">RespectDash</span>
+                    <span class="font-bold text-xl tracking-tight text-gray-900">RespectDash Pro</span>
                 </div>
-                <div class="flex items-center">
+                <div class="flex items-center gap-3">
+                    <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Unduh Excel
+                    </button>
                     <span class="text-sm font-medium text-green-600 bg-green-100 px-3 py-1 rounded-full flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Online Database
                     </span>
@@ -37,15 +45,22 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         
-        <div class="mb-8">
-            <h1 class="text-2xl font-bold text-gray-900">Manajemen Iuran & Keanggotaan</h1>
-            <p class="text-sm text-gray-500 mt-1">Pantau pembayaran, member baru, cuti, dan keluar secara Real-Time.</p>
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Manajemen Iuran & Keanggotaan</h1>
+                <p class="text-sm text-gray-500 mt-1">Sistem Terpadu Respect Basketball Academy</p>
+            </div>
+            <!-- Tab Navigasi -->
+            <div class="flex bg-white p-1 rounded-xl shadow-sm border border-gray-200">
+                <button onclick="switchTab('riwayat')" id="tabRiwayat" class="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white transition-all">Riwayat Transaksi</button>
+                <button onclick="switchTab('status')" id="tabStatus" class="px-4 py-2 text-sm font-semibold rounded-lg text-gray-600 hover:text-gray-900 transition-all">Status Iuran Bulanan</button>
+            </div>
         </div>
 
         <!-- Summary Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center">
                 <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
@@ -84,6 +99,15 @@
             </div>
         </div>
 
+        <!-- Grafik Analitik Bulanan -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Grafik Aktivitas Bulanan (Masuk vs Keluar vs Cuti)</h3>
+            <div class="h-64 relative">
+                <canvas id="activityChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Konten Utama: Bagian Kiri (Form) & Bagian Kanan (Tabel) -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Form Section -->
             <div class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-fit space-y-6">
@@ -135,32 +159,61 @@
 
             <!-- Data Table Section -->
             <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                    <h2 class="text-lg font-semibold text-gray-900">Riwayat Transaksi Cloud</h2>
-                    <button onclick="fetchRiwayat()" class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        Refresh Data
-                    </button>
-                </div>
-                <div class="table-container overflow-x-auto flex-1">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member (KU)</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Detail (Rp & Keterangan)</th>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dataTableBody" class="bg-white divide-y divide-gray-200">
-                            <!-- Data baris akan dimuat via Supabase -->
-                        </tbody>
-                    </table>
-                    <div id="emptyState" class="py-10 text-center text-gray-500">
-                        Memuat data dari Supabase...
+                
+                <!-- TAB 1: RIWAYAT TRANSAKSI -->
+                <div id="sectionRiwayat" class="flex flex-col h-full">
+                    <div class="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
+                        <h2 class="text-lg font-semibold text-gray-900">Riwayat Transaksi Cloud</h2>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <input type="text" id="searchInput" placeholder="Cari nama..." onkeyup="filterRiwayat()" class="px-3 py-1.5 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-48">
+                            <select id="filterStatus" onchange="filterRiwayat()" class="px-3 py-1.5 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Semua Status</option>
+                                <option value="baru_masuk">Baru Masuk</option>
+                                <option value="sudah_bayar">Sudah Bayar</option>
+                                <option value="cuti">Cuti</option>
+                                <option value="keluar">Keluar</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-container overflow-x-auto flex-1">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Member (KU)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Detail</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dataTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                        <div id="emptyState" class="py-10 text-center text-gray-500">Memuat data dari Supabase...</div>
                     </div>
                 </div>
+
+                <!-- TAB 2: STATUS IURAN BULANAN -->
+                <div id="sectionStatus" class="flex flex-col h-full hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                        <h2 class="text-lg font-semibold text-gray-900">Status Pembayaran Iuran Bulan Ini</h2>
+                        <input type="text" id="searchMaster" placeholder="Cari member..." onkeyup="filterMasterStatus()" class="px-3 py-1.5 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 w-48">
+                    </div>
+                    <div class="table-container overflow-x-auto flex-1">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama Member</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">KU</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gender</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status Bulan Ini</th>
+                                </tr>
+                            </thead>
+                            <tbody id="masterStatusTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                        <div id="emptyMasterState" class="py-10 text-center text-gray-500 hidden">Tidak ada data member.</div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </main>
@@ -212,11 +265,15 @@
         </div>
     </div>
 
-    <!-- SCRIPT UTAMA SUPABASE -->
+    <!-- SCRIPT UTAMA -->
     <script>
         const SUPABASE_URL = 'https://bcubvqiyfvqwrzuzkfzf.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_UF8KH-TnKWAco1WreiuI3g_VxY2xnDO';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let globalRiwayatData = [];
+        let globalMasterMembers = [];
+        let activityChartInstance = null;
 
         const todayStr = new Date().toISOString().split('T')[0];
         document.getElementById('dateInput').value = todayStr;
@@ -240,6 +297,27 @@
             }
         }
 
+        // Navigasi Tab
+        window.switchTab = function(tab) {
+            const btnRiwayat = document.getElementById('tabRiwayat');
+            const btnStatus = document.getElementById('tabStatus');
+            const secRiwayat = document.getElementById('sectionRiwayat');
+            const secStatus = document.getElementById('sectionStatus');
+
+            if(tab === 'riwayat') {
+                btnRiwayat.className = "px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white transition-all";
+                btnStatus.className = "px-4 py-2 text-sm font-semibold rounded-lg text-gray-600 hover:text-gray-900 transition-all";
+                secRiwayat.classList.remove('hidden');
+                secStatus.classList.add('hidden');
+            } else {
+                btnStatus.className = "px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white transition-all";
+                btnRiwayat.className = "px-4 py-2 text-sm font-semibold rounded-lg text-gray-600 hover:text-gray-900 transition-all";
+                secStatus.classList.remove('hidden');
+                secRiwayat.classList.add('hidden');
+                renderMasterStatusTable();
+            }
+        }
+
         window.toggleAddMemberModal = function(show) {
             const modal = document.getElementById('addMemberModal');
             if(show) {
@@ -252,62 +330,12 @@
             }
         }
 
-        document.getElementById('newMemberForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const btn = document.getElementById('saveMemberBtn');
-            btn.disabled = true; btn.textContent = 'Menyimpan...';
-
-            const newMember = {
-                nama: document.getElementById('newNama').value.trim(),
-                tahun_lahir: parseInt(document.getElementById('newTahun').value, 10),
-                ku: document.getElementById('newKu').value.trim(),
-                gender: document.getElementById('newGender').value
-            };
-
-            const { data: memberData, error: memberError } = await supabaseClient
-                .from('master_member')
-                .insert([newMember])
-                .select();
-
-            if(memberError) {
-                alert("Gagal mendaftarkan member: " + memberError.message);
-                btn.disabled = false; btn.textContent = 'Simpan & Catat Pembayaran';
-                return;
-            }
-
-            if(memberData && memberData.length > 0) {
-                const newId = memberData[0].id;
-                const tanggalBayar = document.getElementById('newTanggal').value;
-                const nominalBayar = Number(document.getElementById('newNominal').value);
-
-                const transactionPayload = {
-                    member_id: newId,
-                    status: 'baru_masuk',
-                    tanggal_pembayaran: tanggalBayar,
-                    nominal: nominalBayar
-                };
-
-                const { error: txError } = await supabaseClient
-                    .from('riwayat_iuran')
-                    .insert([transactionPayload]);
-
-                if(txError) {
-                    alert("Member tersimpan, tetapi gagal mencatat transaksi awal: " + txError.message);
-                } else {
-                    alert("Member baru berhasil didaftarkan dan pembayaran awal tercatat!");
-                    toggleAddMemberModal(false);
-                    await fetchMasterMembers();
-                    fetchRiwayat();
-                }
-            }
-            btn.disabled = false; btn.textContent = 'Simpan & Catat Pembayaran';
-        });
-
+        // Ambil Data Master Member
         async function fetchMasterMembers() {
             const select = document.getElementById('memberSelect');
             const { data, error } = await supabaseClient
                 .from('master_member')
-                .select('id, nama, ku, tahun_lahir')
+                .select('id, nama, ku, tahun_lahir, gender')
                 .order('nama', { ascending: true });
 
             if (error) {
@@ -315,13 +343,14 @@
                 return;
             }
 
-            if (data.length === 0) {
+            globalMasterMembers = data || [];
+            if (globalMasterMembers.length === 0) {
                 select.innerHTML = '<option value="">Database masih kosong.</option>';
                 return;
             }
 
             select.innerHTML = '<option value="">-- Pilih Nama Member --</option>';
-            data.forEach(member => {
+            globalMasterMembers.forEach(member => {
                 const option = document.createElement('option');
                 option.value = member.id;
                 option.textContent = `${member.nama} (KU: ${member.ku || '-'})`;
@@ -329,6 +358,7 @@
             });
         }
 
+        // Ambil Riwayat Transaksi
         async function fetchRiwayat() {
             document.getElementById('emptyState').classList.remove('hidden');
             document.getElementById('emptyState').textContent = 'Memuat dari server...';
@@ -344,39 +374,89 @@
                 return;
             }
 
-            updateDashboardUI(data);
+            globalRiwayatData = data || [];
+            updateDashboardUI(globalRiwayatData);
+            renderTable(globalRiwayatData);
         }
 
         function updateDashboardUI(data) {
             let totalAktif = 0, totalPemasukan = 0, totalCuti = 0, totalKeluar = 0;
+            let monthlyStats = {};
+
+            data.forEach(item => {
+                if (item.status === 'baru_masuk' || item.status === 'sudah_bayar' || (item.status === 'cuti' && item.nominal)) {
+                    if (item.nominal) totalPemasukan += Number(item.nominal);
+                }
+                if (item.status === 'baru_masuk' || item.status === 'sudah_bayar') totalAktif++;
+                else if (item.status === 'cuti') totalCuti++;
+                else if (item.status === 'keluar') totalKeluar++;
+
+                // Statistik bulanan untuk grafik
+                if (item.tanggal_pembayaran) {
+                    const monthKey = item.tanggal_pembayaran.substring(0, 7); // YYYY-MM
+                    if (!monthlyStats[monthKey]) monthlyStats[monthKey] = { masuk: 0, cuti: 0, keluar: 0 };
+                    if (item.status === 'baru_masuk') monthlyStats[monthKey].masuk++;
+                    else if (item.status === 'cuti') monthlyStats[monthKey].cuti++;
+                    else if (item.status === 'keluar') monthlyStats[monthKey].keluar++;
+                }
+            });
+
+            document.getElementById('card-aktif-value').textContent = totalAktif.toLocaleString('id-ID');
+            document.getElementById('card-pemasukan-value').textContent = formatRupiah(totalPemasukan);
+            document.getElementById('card-cuti-value').textContent = totalCuti.toLocaleString('id-ID');
+            document.getElementById('card-keluar-value').textContent = totalKeluar.toLocaleString('id-ID');
+
+            renderChart(monthlyStats);
+        }
+
+        // Render Grafik Chart.js
+        function renderChart(stats) {
+            const sortedMonths = Object.keys(stats).sort();
+            const labels = sortedMonths.map(m => {
+                const [year, month] = m.split('-');
+                const date = new Date(year, month - 1);
+                return date.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
+            });
+            const masukData = sortedMonths.map(m => stats[m].masuk);
+            const cutiData = sortedMonths.map(m => stats[m].cuti);
+            const keluarData = sortedMonths.map(m => stats[m].keluar);
+
+            const ctx = document.getElementById('activityChart').getContext('2d');
+            if (activityChartInstance) activityChartInstance.destroy();
+
+            activityChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels.length ? labels : ['Bulan Ini'],
+                    datasets: [
+                        { label: 'Baru Masuk', data: masukData.length ? masukData : [0], backgroundColor: '#3b82f6' },
+                        { label: 'Cuti', data: cutiData.length ? cutiData : [0], backgroundColor: '#eab308' },
+                        { label: 'Keluar', data: keluarData.length ? keluarData : [0], backgroundColor: '#ef4444' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                }
+            });
+        }
+
+        // Render Tabel Riwayat
+        function renderTable(data) {
             const tbody = document.getElementById('dataTableBody');
             const emptyState = document.getElementById('emptyState');
+            tbody.innerHTML = '';
 
             if (data.length === 0) {
-                emptyState.textContent = 'Belum ada transaksi tersimpan.';
-                document.getElementById('card-aktif-value').textContent = '0';
-                document.getElementById('card-pemasukan-value').textContent = formatRupiah(0);
-                document.getElementById('card-cuti-value').textContent = '0';
-                document.getElementById('card-keluar-value').textContent = '0';
+                emptyState.textContent = 'Tidak ada riwayat transaksi yang cocok.';
+                emptyState.classList.remove('hidden');
                 return;
             } else {
                 emptyState.classList.add('hidden');
             }
 
             data.forEach(item => {
-                // Semua transaksi yang menghasilkan uang (baru masuk, sudah bayar, atau cuti yang bayar iuran)
-                if (item.status === 'baru_masuk' || item.status === 'sudah_bayar' || (item.status === 'cuti' && item.nominal)) {
-                    if (item.nominal) totalPemasukan += Number(item.nominal);
-                }
-
-                if (item.status === 'baru_masuk' || item.status === 'sudah_bayar') {
-                    totalAktif++;
-                } else if (item.status === 'cuti') {
-                    totalCuti++;
-                } else if (item.status === 'keluar') {
-                    totalKeluar++;
-                }
-
                 const nama = item.master_member ? item.master_member.nama : 'Unknown';
                 const ku = item.master_member ? item.master_member.ku : '-';
                 
@@ -394,10 +474,7 @@
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-gray-50 transition-colors";
                 tr.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-medium text-gray-900">${nama}</div>
-                        <div class="text-xs text-gray-500">KU: ${ku}</div>
-                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-medium text-gray-900">${nama}</div><div class="text-xs text-gray-500">KU: ${ku}</div></td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">${getStatusBadge(item.status)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(item.tanggal_pembayaran)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">${detailHtml}</td>
@@ -409,13 +486,142 @@
                 `;
                 tbody.appendChild(tr);
             });
-
-            document.getElementById('card-aktif-value').textContent = totalAktif.toLocaleString('id-ID');
-            document.getElementById('card-pemasukan-value').textContent = formatRupiah(totalPemasukan);
-            document.getElementById('card-cuti-value').textContent = totalCuti.toLocaleString('id-ID');
-            document.getElementById('card-keluar-value').textContent = totalKeluar.toLocaleString('id-ID');
         }
 
+        // Filter Riwayat (Pencarian & Status)
+        window.filterRiwayat = function() {
+            const keyword = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('filterStatus').value;
+
+            const filtered = globalRiwayatData.filter(item => {
+                const nama = item.master_member ? item.master_member.nama.toLowerCase() : '';
+                const matchName = nama.includes(keyword);
+                const matchStatus = statusFilter === '' || item.status === statusFilter;
+                return matchName && matchStatus;
+            });
+            renderTable(filtered);
+        }
+
+        // Render Status Iuran Bulanan per Member
+        function renderMasterStatusTable() {
+            const tbody = document.getElementById('masterStatusTableBody');
+            const empty = document.getElementById('emptyMasterState');
+            tbody.innerHTML = '';
+
+            if(globalMasterMembers.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            const currentMonthStr = new Date().toISOString().substring(0, 7); // YYYY-MM
+
+            globalMasterMembers.forEach(member => {
+                // Cek apakah member ini sudah bayar / baru masuk di bulan ini
+                const paidThisMonth = globalRiwayatData.find(tx => 
+                    tx.member_id === member.id && 
+                    tx.tanggal_pembayaran && 
+                    tx.tanggal_pembayaran.startsWith(currentMonthStr) &&
+                    (tx.status === 'baru_masuk' || tx.status === 'sudah_bayar' || tx.status === 'cuti')
+                );
+
+                const isKeluar = globalRiwayatData.some(tx => tx.member_id === member.id && tx.status === 'keluar');
+
+                let badge = '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">Belum Bayar</span>';
+                if(isKeluar) {
+                    badge = '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">Keluar</span>';
+                } else if(paidThisMonth) {
+                    badge = '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">Sudah Bayar / Lunas</span>';
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 transition-colors master-row";
+                tr.setAttribute('data-name', member.nama.toLowerCase());
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${member.nama}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${member.ku || '-'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${member.gender || '-'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">${badge}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.filterMasterStatus = function() {
+            const keyword = document.getElementById('searchMaster').value.toLowerCase();
+            const rows = document.querySelectorAll('.master-row');
+            rows.forEach(row => {
+                const name = row.getAttribute('data-name');
+                if(name.includes(keyword)) row.style.display = '';
+                else row.style.display = 'none';
+            });
+        }
+
+        // Ekspor ke Excel (.xlsx)
+        window.exportToExcel = function() {
+            if(globalRiwayatData.length === 0) {
+                alert("Tidak ada data transaksi untuk diekspor.");
+                return;
+            }
+            const exportData = globalRiwayatData.map(item => ({
+                "Nama Member": item.master_member ? item.master_member.nama : 'Unknown',
+                "Kelompok Umur": item.master_member ? item.master_member.ku : '-',
+                "Status": item.status,
+                "Tanggal": item.tanggal_pembayaran,
+                "Nominal (Rp)": item.nominal || 0,
+                "Alasan / Keterangan": item.alasan || '-'
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Riwayat Iuran");
+            XLSX.writeFile(workbook, "Rekap_Iuran_Respect_Academy.xlsx");
+        }
+
+        // Form Submit Member Baru
+        document.getElementById('newMemberForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('saveMemberBtn');
+            btn.disabled = true; btn.textContent = 'Menyimpan...';
+
+            const newMember = {
+                nama: document.getElementById('newNama').value.trim(),
+                tahun_lahir: parseInt(document.getElementById('newTahun').value, 10),
+                ku: document.getElementById('newKu').value.trim(),
+                gender: document.getElementById('newGender').value
+            };
+
+            const { data: memberData, error: memberError } = await supabaseClient.from('master_member').insert([newMember]).select();
+
+            if(memberError) {
+                alert("Gagal mendaftarkan member: " + memberError.message);
+                btn.disabled = false; btn.textContent = 'Simpan & Catat Pembayaran';
+                return;
+            }
+
+            if(memberData && memberData.length > 0) {
+                const newId = memberData[0].id;
+                const transactionPayload = {
+                    member_id: newId,
+                    status: 'baru_masuk',
+                    tanggal_pembayaran: document.getElementById('newTanggal').value,
+                    nominal: Number(document.getElementById('newNominal').value)
+                };
+
+                const { error: txError } = await supabaseClient.from('riwayat_iuran').insert([transactionPayload]);
+                if(txError) {
+                    alert("Member tersimpan, tetapi gagal mencatat transaksi awal: " + txError.message);
+                } else {
+                    alert("Member baru berhasil didaftarkan dan pembayaran awal tercatat!");
+                    toggleAddMemberModal(false);
+                    await fetchMasterMembers();
+                    fetchRiwayat();
+                }
+            }
+            btn.disabled = false; btn.textContent = 'Simpan & Catat Pembayaran';
+        });
+
+        // Form Submit Transaksi Biasa
         document.getElementById('dataForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const submitBtn = document.getElementById('submitBtn');
@@ -443,15 +649,12 @@
                 const feedback = document.getElementById('formFeedback');
                 feedback.classList.remove('hidden');
                 setTimeout(() => feedback.classList.add('hidden'), 3000);
-                
                 document.getElementById('nominalInput').value = '';
                 document.getElementById('alasanInput').value = '';
-                
                 fetchRiwayat();
             } else {
                 alert("Gagal menyimpan: " + error.message);
             }
-            
             submitBtn.disabled = false; submitBtn.textContent = 'Simpan ke Database';
         });
 
@@ -463,7 +666,6 @@
             }
         }
 
-        // Dinamis Form Sesuai Status
         document.getElementById('statusInput').addEventListener('change', (e) => {
             const val = e.target.value;
             const nomContainer = document.getElementById('nominalContainer');
@@ -475,17 +677,17 @@
                 nomContainer.classList.remove('hidden'); nomInput.required = true;
                 alasContainer.classList.add('hidden'); alasInput.required = false; alasInput.value = '';
             } else if (val === 'cuti') {
-                nomContainer.classList.remove('hidden'); nomInput.required = false; // Opsional jika cuti bayar/tidak
+                nomContainer.classList.remove('hidden'); nomInput.required = false;
                 alasContainer.classList.remove('hidden'); alasInput.required = true;
-            } else { // Keluar
+            } else {
                 nomContainer.classList.add('hidden'); nomInput.required = false; nomInput.value = '';
                 alasContainer.classList.remove('hidden'); alasInput.required = true;
             }
         });
 
-        window.addEventListener('DOMContentLoaded', () => {
-            fetchMasterMembers();
-            fetchRiwayat();
+        window.addEventListener('DOMContentLoaded', async () => {
+            await fetchMasterMembers();
+            await fetchRiwayat();
         });
     </script>
 </body>
