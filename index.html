@@ -129,7 +129,6 @@
                         <div>
                             <label for="statusInput" class="block text-sm font-medium text-gray-700 mb-1">Status Aktivitas</label>
                             <select id="statusInput" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-colors">
-                                <option value="baru_masuk">Baru Masuk</option>
                                 <option value="sudah_bayar">Sudah Bayar Iuran</option>
                                 <option value="cuti">Cuti</option>
                                 <option value="keluar">Keluar</option>
@@ -391,11 +390,10 @@
                 else if (item.status === 'cuti') totalCuti++;
                 else if (item.status === 'keluar') totalKeluar++;
 
-                // Statistik bulanan untuk grafik
                 if (item.tanggal_pembayaran) {
-                    const monthKey = item.tanggal_pembayaran.substring(0, 7); // YYYY-MM
+                    const monthKey = item.tanggal_pembayaran.substring(0, 7);
                     if (!monthlyStats[monthKey]) monthlyStats[monthKey] = { masuk: 0, cuti: 0, keluar: 0 };
-                    if (item.status === 'baru_masuk') monthlyStats[monthKey].masuk++;
+                    if (item.status === 'baru_masuk' || item.status === 'sudah_bayar') monthlyStats[monthKey].masuk++;
                     else if (item.status === 'cuti') monthlyStats[monthKey].cuti++;
                     else if (item.status === 'keluar') monthlyStats[monthKey].keluar++;
                 }
@@ -409,7 +407,6 @@
             renderChart(monthlyStats);
         }
 
-        // Render Grafik Chart.js
         function renderChart(stats) {
             const sortedMonths = Object.keys(stats).sort();
             const labels = sortedMonths.map(m => {
@@ -429,7 +426,7 @@
                 data: {
                     labels: labels.length ? labels : ['Bulan Ini'],
                     datasets: [
-                        { label: 'Baru Masuk', data: masukData.length ? masukData : [0], backgroundColor: '#3b82f6' },
+                        { label: 'Aktif / Bayar', data: masukData.length ? masukData : [0], backgroundColor: '#3b82f6' },
                         { label: 'Cuti', data: cutiData.length ? cutiData : [0], backgroundColor: '#eab308' },
                         { label: 'Keluar', data: keluarData.length ? keluarData : [0], backgroundColor: '#ef4444' }
                     ]
@@ -442,7 +439,6 @@
             });
         }
 
-        // Render Tabel Riwayat
         function renderTable(data) {
             const tbody = document.getElementById('dataTableBody');
             const emptyState = document.getElementById('emptyState');
@@ -488,7 +484,6 @@
             });
         }
 
-        // Filter Riwayat (Pencarian & Status)
         window.filterRiwayat = function() {
             const keyword = document.getElementById('searchInput').value.toLowerCase();
             const statusFilter = document.getElementById('filterStatus').value;
@@ -502,7 +497,6 @@
             renderTable(filtered);
         }
 
-        // Render Status Iuran Bulanan per Member
         function renderMasterStatusTable() {
             const tbody = document.getElementById('masterStatusTableBody');
             const empty = document.getElementById('emptyMasterState');
@@ -514,10 +508,9 @@
             }
             empty.classList.add('hidden');
 
-            const currentMonthStr = new Date().toISOString().substring(0, 7); // YYYY-MM
+            const currentMonthStr = new Date().toISOString().substring(0, 7);
 
             globalMasterMembers.forEach(member => {
-                // Cek apakah member ini sudah bayar / baru masuk di bulan ini
                 const paidThisMonth = globalRiwayatData.find(tx => 
                     tx.member_id === member.id && 
                     tx.tanggal_pembayaran && 
@@ -557,7 +550,6 @@
             });
         }
 
-        // Ekspor ke Excel (.xlsx)
         window.exportToExcel = function() {
             if(globalRiwayatData.length === 0) {
                 alert("Tidak ada data transaksi untuk diekspor.");
@@ -634,7 +626,7 @@
                 tanggal_pembayaran: document.getElementById('dateInput').value
             };
 
-            if (statusVal === 'baru_masuk' || statusVal === 'sudah_bayar') {
+            if (statusVal === 'sudah_bayar') {
                 payload.nominal = Number(document.getElementById('nominalInput').value);
             } else if (statusVal === 'cuti') {
                 payload.nominal = Number(document.getElementById('nominalInput').value) || 0;
@@ -673,7 +665,7 @@
             const alasContainer = document.getElementById('alasanContainer');
             const alasInput = document.getElementById('alasanInput');
 
-            if (val === 'baru_masuk' || val === 'sudah_bayar') {
+            if (val === 'sudah_bayar') {
                 nomContainer.classList.remove('hidden'); nomInput.required = true;
                 alasContainer.classList.add('hidden'); alasInput.required = false; alasInput.value = '';
             } else if (val === 'cuti') {
