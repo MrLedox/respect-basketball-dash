@@ -510,7 +510,6 @@
                 select.appendChild(option);
             });
 
-            // Jika tab status sedang aktif, refresh tabelnya
             if(!document.getElementById('sectionStatus').classList.contains('hidden')) {
                 renderMasterStatusTable();
             }
@@ -709,8 +708,6 @@
                     }
                 }
 
-                const memberDataJson = encodeURIComponent(JSON.stringify(member));
-
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-gray-50 transition-colors master-row";
                 tr.setAttribute('data-name', member.nama.toLowerCase());
@@ -720,10 +717,10 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${member.no_wa_ortu || '<span class="text-orange-500 italic">Belum diisi</span>'}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">${badge}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                        <button onclick='bukaEditMember(${memberDataJson})' class="text-blue-600 hover:text-blue-800 transition-colors" title="Edit Member">
+                        <button onclick="bukaEditMember('${member.id}')" class="text-blue-600 hover:text-blue-800 transition-colors font-medium" title="Edit Member">
                             Edit
                         </button>
-                        <button onclick="hapusMember('${member.id}')" class="text-red-500 hover:text-red-700 transition-colors" title="Hapus Member">
+                        <button onclick="hapusMember('${member.id}')" class="text-red-500 hover:text-red-700 transition-colors font-medium" title="Hapus Member">
                             Hapus
                         </button>
                     </td>
@@ -732,8 +729,14 @@
             });
         }
 
-        window.bukaEditMember = function(member) {
-            toggleEditMemberModal(true, member);
+        // Fungsi Membuka Edit berdasarkan ID member yang tersimpan di memori global
+        window.bukaEditMember = function(id) {
+            const member = globalMasterMembers.find(m => m.id === id);
+            if(member) {
+                toggleEditMemberModal(true, member);
+            } else {
+                alert("Data member tidak ditemukan.");
+            }
         }
 
         window.filterMasterStatus = function() {
@@ -780,7 +783,6 @@
         // Hapus Member dari Database
         window.hapusMember = async function(id) {
             if(confirm("PERINGATAN: Menghapus member ini juga dapat menghapus riwayat transaksinya. Yakin ingin menghapus member ini?")) {
-                // Hapus riwayat iuran terkait terlebih dahulu untuk menghindari error foreign key
                 await supabaseClient.from('riwayat_iuran').delete().eq('member_id', id);
                 
                 const { error } = await supabaseClient.from('master_member').delete().eq('id', id);
